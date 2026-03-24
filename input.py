@@ -45,8 +45,14 @@ def braille_to_matrix(char):
 
 if __name__ == "__main__":
     theWord = getWord()
+    listOfChar = list(theWord)
+    result = {}
     #print(f"You entered: {theWord}")
-    result = send_to_api(theWord)
-    matrix = braille_to_matrix(result['response'])
-    print(f"API Response: {result}")
-    print(f"Braille Matrix: {matrix}")
+    for char in listOfChar:
+        res = send_to_api(char)
+        matrix = braille_to_matrix(res['response'])
+        # print(f"Character: {char}")
+        # print(f"Braille Matrix: {matrix}")
+        result[char] = (res, matrix)
+    
+    print(result)
