@@ -1,31 +1,34 @@
 import requests
+import serial
+import time
 
-def getWord():
+#Serial setup
+arduino = serial.Serial('COM3', 9600, timeout=1)
+time.sleep(2)  
 
-    wordSizeLimit = 1
-    user_input = ""
-    while len(user_input) != wordSizeLimit:
-        user_input = input(f"Enter a word with a limit of {wordSizeLimit} character(s): ")
-        
-        if len(user_input) == wordSizeLimit:
+
+#Get character input
+def get_character():
+    while True:
+        user_input = input("Enter ONE character: ")
+        if len(user_input) == 1:
             return user_input
-        else:
-            print(f"Invalid input. Please enter exactly {wordSizeLimit} character(s).\n")
-    
-    return user_input
+        print("Invalid input. Enter exactly 1 character.\n")
 
-def send_to_api(word):
+
+#Call Braille API
+def send_to_api(char):
     res = requests.post(
         "http://localhost:5000/translate",
-        json={"translate": word}
+        json={"translate": char}
     )
-    
-    return res.json()
+    return res.json()['response']
 
+
+#Convert from Braille to dot matrix
 def braille_to_matrix(char):
-    code = ord(char) - 0x2800  # Braille Unicode starts here
-    
-    # Each bit corresponds to a dot
+    code = ord(char) - 0x2800
+
     dots = [
         (code >> 0) & 1,  # dot 1
         (code >> 1) & 1,  # dot 2
@@ -34,7 +37,7 @@ def braille_to_matrix(char):
         (code >> 4) & 1,  # dot 5
         (code >> 5) & 1,  # dot 6
     ]
-    
+
     return [
         [dots[0], dots[3]],
         [dots[1], dots[4]],
@@ -42,17 +45,49 @@ def braille_to_matrix(char):
     ]
 
 
+#Map from dot matrix to octagon face
+def column_to_face(top, middle, bottom):
+    # Convert 3 bits → number (0–7)
+    return (top << 2) | (middle << 1) | bottom
+
+
+def matrix_to_faces(matrix):
+    # Left column (dots 1,2,3)
+    left_face = column_to_face(
+        matrix[0][0],
+        matrix[1][0],
+        matrix[2][0]
+    )
+
+    # Right column (dots 4,5,6)
+    right_face = column_to_face(
+        matrix[0][1],
+        matrix[1][1],
+        matrix[2][1]
+    )
+
+    return left_face, right_face
+
+
+#Send to Arduino
+def send_to_arduino(left_face, right_face):
+    command = f"{left_face},{right_face}\n"
+    print(f"Sending: {command.strip()}")
+    arduino.write(command.encode())
+    time.sleep(1)
+
 
 if __name__ == "__main__":
-    theWord = getWord()
-    listOfChar = list(theWord)
-    result = {}
-    #print(f"You entered: {theWord}")
-    for char in listOfChar:
-        res = send_to_api(char)
-        matrix = braille_to_matrix(res['response'])
-        # print(f"Character: {char}")
-        # print(f"Braille Matrix: {matrix}")
-        result[char] = (res, matrix)
-    
-    print(result)
+    char = get_character()
+
+    braille_char = send_to_api(char)
+    matrix = braille_to_matrix(braille_char)
+    left_face, right_face = matrix_to_faces(matrix)
+
+    print(f"\nInput: {char}")
+    print(f"Braille char: {braille_char}")
+    print(f"Matrix: {matrix}")
+    print(f"Left wheel face: {left_face}")
+    print(f"Right wheel face: {right_face}")
+
+    send_to_arduino(left_face, right_face)
