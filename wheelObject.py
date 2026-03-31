@@ -7,11 +7,14 @@ class Wheel:
     def spin_wheel(self, future_step):
         forward = future_step - self.current_step
         backward = self.current_step - forward
-        if abs(forward) < abs(backward):
+        if future_step == self.current_step:
+            return
+        elif abs(forward) < abs(backward):
             Move_motor_steps(forward)    #function that Tim has to spin motor
             self.current_step = (self.current_step + forward) % (8*self.steps_per_face_spin)
         else:
             Move_motor_steps(backward)    #function that Tim has to spin motor
             self.current_step = (self.current_step + backward) % (8*self.steps_per_face_spin)
+        return
 
     # Add a calibration method if we have time.
