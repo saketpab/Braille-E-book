@@ -81,7 +81,6 @@ if __name__ == "__main__":
 
     for left_face, right_face in result:
         send_to_arduino(left_face, right_face)
-        time.sleep(0.5)
     print(logs)
     print(result)
     arduino.close()
