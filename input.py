@@ -1,6 +1,7 @@
 import requests
-from arduinoScript import send_to_arduino
-from wheelSpinningScript import spin_wheels
+import time
+from arduinoScript import send_to_arduino, arduino
+
 
 #takes in the word from the user, we can adjust ther length of the word
 def getWord():
@@ -78,6 +79,9 @@ if __name__ == "__main__":
         logs.append((char, res, matrix, left_face, right_face))
         result.append([left_face, right_face])
 
-    spin_wheels(result)
+    for left_face, right_face in result:
+        send_to_arduino(left_face, right_face)
+        time.sleep(0.5)
     print(logs)
     print(result)
+    arduino.close()

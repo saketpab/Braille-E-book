@@ -1,13 +1,13 @@
 #include <Stepper.h>
 
 //Motor configuration 
-const int STEPS_PER_FACE  = 500;   
-const int TOTAL_FACES     = 8;
+const int STEPS_PER_FACE  = 256; //256   
+const int TOTAL_FACES     = 8; //8
 
 //Initialize stepper motors
 // Stepper(steps_per_revolution, pin1, pin2)
-Stepper leftWheel(STEPS_PER_FACE * TOTAL_FACES, 2, 3);
-Stepper rightWheel(STEPS_PER_FACE * TOTAL_FACES, 4, 5);
+Stepper leftWheel(STEPS_PER_FACE * TOTAL_FACES,  8, 10,  9, 11);
+Stepper rightWheel(STEPS_PER_FACE * TOTAL_FACES, 4, 6,  5, 7);
 
 //Initialize wheels
 int leftCurrentFace  = 0;
@@ -15,12 +15,16 @@ int rightCurrentFace = 0;
 
 
 void setup() {
-  leftWheel.setSpeed(20);   
-  rightWheel.setSpeed(20);
+  leftWheel.setSpeed(10);   
+  rightWheel.setSpeed(10);
+
+  leftCurrentFace = 0;
+  rightCurrentFace = 0;
 
   Serial.begin(9600);
   Serial.println("READY");
 }
+
 
 //Shortest-path spin to a target face
 void spinToFace(Stepper &wheel, int &currentFace, int targetFace) {
@@ -68,6 +72,7 @@ void loop() {
 
     spinToFace(leftWheel,  leftCurrentFace,  leftTarget);
     spinToFace(rightWheel, rightCurrentFace, rightTarget);
+    delay(2000);
 
     Serial.println("OK");
   }
