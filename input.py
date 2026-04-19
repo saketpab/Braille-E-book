@@ -6,7 +6,8 @@ from arduinoScript import send_to_arduino, arduino
 #takes in the word from the user, we can adjust ther length of the word
 def getWord():
 
-    wordSizeLimit = 2
+    wordSizeLimit = 1
+
     user_input = ""
     while len(user_input) != wordSizeLimit:
         user_input = input(f"Enter a word with a limit of {wordSizeLimit} character(s): ")
@@ -27,8 +28,30 @@ def send_to_api(word):
     
     return res.json()
 
+motor1_map = {
+    "000": 0,
+    "111": 1,
+    "011": 2,
+    "101": 3,
+    "110": 4,
+    "100": 5,
+    "010": 6,
+    "001": 7
+}
+
+motor2_map = {
+    "000": 0,
+    "100": 1,
+    "010": 2,
+    "001": 3,
+    "011": 4,
+    "101": 5,
+    "110": 6,
+    "111": 7
+}
+
 #converts the braille unicode character to a 2D matrix
-def braille_to_matrix(char):
+def braille_to_faces(char):
     code = ord(char) - 0x2800  # Braille Unicode starts here
     
     # Each bit corresponds to a dot
@@ -41,46 +64,72 @@ def braille_to_matrix(char):
         (code >> 5) & 1,  # dot 6
     ]
     
-    return [
-        [dots[0], dots[3]],
-        [dots[1], dots[4]],
-        [dots[2], dots[5]],
-    ]
+    # build 3-dot columns
+    left_pattern = f"{dots[0]}{dots[1]}{dots[2]}"
+    right_pattern = f"{dots[3]}{dots[4]}{dots[5]}"
 
-#converts a 2D matrix to the corresponding faces 
-def column_to_face(top, middle, bottom):
-    return (top << 2) | (middle << 1) | bottom
+    # lookup (safe fallback to 0 if missing)
+    left_face = motor1_map.get(left_pattern, 0)
+    right_face = motor2_map.get(right_pattern, 0)
 
-#converts the set of two 2D matrix to the corresponding faces for the left and right wheel
-def matrix_to_faces(matrix):
-    left_face = column_to_face(matrix[0][0], matrix[1][0], matrix[2][0])
-    right_face = column_to_face(matrix[0][1], matrix[1][1], matrix[2][1])
     return left_face, right_face
 
 
 
-
 #the main part that calls all the functions and runs the program. It gets the word from the user, sends it to the API, converts the response to the corresponding faces, and then spins the wheels accordingly
+# if __name__ == "__main__":
+#     theWord = getWord()
+#     listOfChar = list(theWord)
+#     logs = []
+#     result = []
+#     #print(f"You entered: {theWord}")
+#     for char in listOfChar:
+#         res = send_to_api(char)
+#         matrix = braille_to_matrix(res['response'])
+#         left_face, right_face = matrix_to_faces(matrix)
+    
+    
+
+#         # print(f"Character: {char}")
+#         # print(f"Braille Matrix: {matrix}")
+#         logs.append((char, res, matrix, left_face, right_face))
+#         result.append([left_face, right_face])
+
+#     for left_face, right_face in result:
+#         send_to_arduino(left_face, right_face)
+#     print(logs)
+#     print(result)
+#     arduino.close()
+
+
 if __name__ == "__main__":
     theWord = getWord()
     listOfChar = list(theWord)
+
     logs = []
     result = []
-    #print(f"You entered: {theWord}")
+
     for char in listOfChar:
         res = send_to_api(char)
-        matrix = braille_to_matrix(res['response'])
-        left_face, right_face = matrix_to_faces(matrix)
-    
-    
 
-        # print(f"Character: {char}")
-        # print(f"Braille Matrix: {matrix}")
-        logs.append((char, res, matrix, left_face, right_face))
-        result.append([left_face, right_face])
+        braille_char = res['response']
 
+        left_face, right_face = braille_to_faces(braille_char)
+
+        logs.append({
+            "char": char,
+            "braille": braille_char,
+            "left_face": left_face,
+            "right_face": right_face
+        })
+
+        result.append((left_face, right_face))
+
+    # send to Arduino
     for left_face, right_face in result:
-        send_to_arduino(left_face, right_face)
+       send_to_arduino(left_face, right_face)
+
     print(logs)
     print(result)
-    arduino.close()
+
+    #arduino.close()
