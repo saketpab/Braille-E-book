@@ -2,12 +2,12 @@ import serial
 import time
 
 arduino = serial.Serial('COM4', 9600, timeout=2)
-time.sleep(2)  # wait for Arduino reset
+time.sleep(2)
 
-# Wait for READY with timeout
+# Wait for Arduino READY
 start_time = time.time()
 while True:
-    line = arduino.readline().decode().strip()
+    line = arduino.readline().decode(errors='ignore').strip()
     if line:
         print(f"Arduino: {line}")
         if line == "READY":
@@ -24,7 +24,7 @@ def send_to_arduino(left_face, right_face):
     timeout_counter = 0
 
     while True:
-        line = arduino.readline().decode().strip()
+        line = arduino.readline().decode(errors='ignore').strip()
 
         if not line:
             timeout_counter += 1
