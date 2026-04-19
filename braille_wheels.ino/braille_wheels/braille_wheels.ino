@@ -35,13 +35,13 @@ void spinToFace(Stepper &wheel, int &currentFace, int targetFace, bool isRight) 
   if (forward <= backward) {
     Serial.print("Spinning forward ");
     if (isRight)
-      {forward = -forward}
+      {forward = -forward;}
     Serial.println(forward);
     wheel.step(forward * STEPS_PER_FACE);
   } else {
     Serial.print("Spinning backward ");
     if (isRight)
-      {backward = -backward}
+      {backward = -backward;}
     Serial.println(backward);
     wheel.step(-backward * STEPS_PER_FACE);
   }
