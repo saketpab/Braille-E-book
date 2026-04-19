@@ -21,7 +21,7 @@ void setup() {
 }
 
 // Spin to target face
-void spinToFace(Stepper &wheel, int &currentFace, int targetFace) {
+void spinToFace(Stepper &wheel, int &currentFace, int targetFace, bool isRight) {
   Serial.print("Current: ");
   Serial.print(currentFace);
   Serial.print(" Target: ");
@@ -34,10 +34,14 @@ void spinToFace(Stepper &wheel, int &currentFace, int targetFace) {
 
   if (forward <= backward) {
     Serial.print("Spinning forward ");
+    if (isRight)
+      {forward = -forward}
     Serial.println(forward);
     wheel.step(forward * STEPS_PER_FACE);
   } else {
     Serial.print("Spinning backward ");
+    if (isRight)
+      {backward = -backward}
     Serial.println(backward);
     wheel.step(-backward * STEPS_PER_FACE);
   }
@@ -70,8 +74,8 @@ void loop() {
       return;
     }
 
-    spinToFace(leftWheel,  leftCurrentFace,  leftTarget);
-    spinToFace(rightWheel, rightCurrentFace, rightTarget);
+    spinToFace(leftWheel,  leftCurrentFace,  leftTarget, false);
+    spinToFace(rightWheel, rightCurrentFace, rightTarget, true);
 
     Serial.println("OK");
   }
