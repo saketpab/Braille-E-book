@@ -1,78 +1,77 @@
 #include <Stepper.h>
 
-//Motor configuration 
-const int STEPS_PER_FACE  = 256; //256   
-const int TOTAL_FACES     = 8; //8
+// Motor configuration 
+const int STEPS_PER_FACE  = 256;
+const int TOTAL_FACES     = 8;
 
-//Initialize stepper motors
-// Stepper(steps_per_revolution, pin1, pin2)
-Stepper leftWheel(STEPS_PER_FACE * TOTAL_FACES,  8, 10,  9, 11);
-Stepper rightWheel(STEPS_PER_FACE * TOTAL_FACES, 4, 6,  5, 7);
+// Initialize stepper motors
+Stepper leftWheel(STEPS_PER_FACE * TOTAL_FACES,  8, 10, 9, 11);
+Stepper rightWheel(STEPS_PER_FACE * TOTAL_FACES, 4, 6, 5, 7);
 
-//Initialize wheels
+// Track current faces
 int leftCurrentFace  = 0;
 int rightCurrentFace = 0;
-
 
 void setup() {
   leftWheel.setSpeed(10);   
   rightWheel.setSpeed(10);
 
-  leftCurrentFace = 0;
-  rightCurrentFace = 0;
-
   Serial.begin(9600);
   Serial.println("READY");
 }
 
-
-//Shortest-path spin to a target face
+// Spin to target face
 void spinToFace(Stepper &wheel, int &currentFace, int targetFace) {
+  Serial.print("Current: ");
+  Serial.print(currentFace);
+  Serial.print(" Target: ");
+  Serial.println(targetFace);
+
   if (currentFace == targetFace) return;
 
   int forward  = (targetFace - currentFace + TOTAL_FACES) % TOTAL_FACES;
   int backward = TOTAL_FACES - forward;
 
   if (forward <= backward) {
-    wheel.step(forward * STEPS_PER_FACE);    
     Serial.print("Spinning forward ");
-    Serial.print(forward);
-    Serial.print(" face(s) to face ");
-    Serial.println(targetFace);
+    Serial.println(forward);
+    wheel.step(forward * STEPS_PER_FACE);
   } else {
-    wheel.step(-backward * STEPS_PER_FACE);  
     Serial.print("Spinning backward ");
-    Serial.print(backward);
-    Serial.print(" face(s) to face ");
-    Serial.println(targetFace);
+    Serial.println(backward);
+    wheel.step(-backward * STEPS_PER_FACE);
   }
 
   currentFace = targetFace;
 }
 
 void loop() {
-  if (Serial.available() > 0) {
-    String input = Serial.readStringUntil('\n');
+  if (Serial.available()) {
+    String input = Serial.readString();   // Main Change, maybe /n was breaking stuff.
+
     input.trim();
+
+    Serial.print("Received: [");
+    Serial.print(input);
+    Serial.println("]");
 
     int commaIndex = input.indexOf(',');
     if (commaIndex == -1) {
-      Serial.println("ERROR: bad format, expected left,right");
+      Serial.println("ERROR: bad format");
       return;
     }
 
     int leftTarget  = input.substring(0, commaIndex).toInt();
     int rightTarget = input.substring(commaIndex + 1).toInt();
 
-    if (leftTarget  < 0 || leftTarget  >= TOTAL_FACES ||
+    if (leftTarget < 0 || leftTarget >= TOTAL_FACES ||
         rightTarget < 0 || rightTarget >= TOTAL_FACES) {
-      Serial.println("ERROR: face number out of range (0-7)");
+      Serial.println("ERROR: out of range");
       return;
     }
 
     spinToFace(leftWheel,  leftCurrentFace,  leftTarget);
     spinToFace(rightWheel, rightCurrentFace, rightTarget);
-    delay(2000);
 
     Serial.println("OK");
   }
